@@ -19,6 +19,24 @@ const alienVoicePresets = [
 ];
 const maxExtraVoiceEs = 20;
 
+function preventPageZoom(event) {
+  event.preventDefault();
+}
+
+document.addEventListener(
+  "touchmove",
+  (event) => {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  },
+  { passive: false },
+);
+
+document.addEventListener("gesturestart", preventPageZoom, { passive: false });
+document.addEventListener("gesturechange", preventPageZoom, { passive: false });
+document.addEventListener("gestureend", preventPageZoom, { passive: false });
+
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
