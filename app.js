@@ -10,9 +10,20 @@ let lastManualShout = 0;
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const shoutLabels = ["attenzione", "attento", "ttn zn"];
 const labelColors = ["#ffd238", "#e64b3c", "#6ab7ff", "#f9f2e2", "#9be7c2"];
+const alienVoicePresets = [
+  { rate: 0.58, pitch: 0.25 },
+  { rate: 0.72, pitch: 0.35 },
+  { rate: 0.82, pitch: 1.55 },
+  { rate: 1.08, pitch: 0.55 },
+  { rate: 1.22, pitch: 1.85 },
+];
 
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
+}
+
+function randomItem(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
 function spawnRandomShout() {
@@ -39,6 +50,18 @@ function pickItalianVoice() {
     .find((voice) => voice.lang.toLowerCase().startsWith("it"));
 }
 
+function pickRandomVoice() {
+  if (!("speechSynthesis" in window)) {
+    return null;
+  }
+
+  const voices = window.speechSynthesis.getVoices();
+  const italianVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("it"));
+  const voicePool = italianVoices.length ? italianVoices : voices;
+
+  return voicePool.length ? randomItem(voicePool) : null;
+}
+
 function speakAttention() {
   if (!("speechSynthesis" in window)) {
     return;
@@ -47,15 +70,16 @@ function speakAttention() {
   window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance("attenzione");
-  const italianVoice = pickItalianVoice();
+  const randomVoice = pickRandomVoice();
+  const voicePreset = randomItem(alienVoicePresets);
 
   utterance.lang = "it-IT";
-  utterance.rate = 0.86;
-  utterance.pitch = 0.7;
+  utterance.rate = voicePreset.rate;
+  utterance.pitch = voicePreset.pitch;
   utterance.volume = 1;
 
-  if (italianVoice) {
-    utterance.voice = italianVoice;
+  if (randomVoice) {
+    utterance.voice = randomVoice;
   }
 
   window.speechSynthesis.speak(utterance);
