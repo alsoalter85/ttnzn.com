@@ -2,11 +2,32 @@ const alien = document.querySelector(".alien");
 const shoutButton = document.querySelector("#shout-button");
 const quietButton = document.querySelector("#quiet-button");
 const liveShout = document.querySelector("#live-shout");
+const randomShouts = document.querySelector("#random-shouts");
 
 let closeTimer;
 let lastManualShout = 0;
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shoutLabels = ["attenzione", "attento", "ttn zn"];
+const labelColors = ["#ffd238", "#e64b3c", "#6ab7ff", "#f9f2e2", "#9be7c2"];
+
+function randomBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function spawnRandomShout() {
+  const label = document.createElement("span");
+
+  label.className = "random-shout";
+  label.textContent = shoutLabels[Math.floor(Math.random() * shoutLabels.length)];
+  label.style.setProperty("--x", `${randomBetween(16, 84)}vw`);
+  label.style.setProperty("--y", `${randomBetween(12, 84)}vh`);
+  label.style.setProperty("--label-size", `${randomBetween(28, 78)}px`);
+  label.style.setProperty("--label-rotation", `${randomBetween(-12, 12)}deg`);
+  label.style.setProperty("--label-color", labelColors[Math.floor(Math.random() * labelColors.length)]);
+
+  randomShouts.append(label);
+}
 
 function pickItalianVoice() {
   if (!("speechSynthesis" in window)) {
@@ -47,7 +68,7 @@ function closeMouth() {
   liveShout.textContent = "";
 }
 
-function shout({ voice = true } = {}) {
+function shout({ voice = true, burst = true } = {}) {
   window.clearTimeout(closeTimer);
   alien.classList.remove("is-shouting");
 
@@ -60,6 +81,10 @@ function shout({ voice = true } = {}) {
   if (voice) {
     lastManualShout = Date.now();
     speakAttention();
+  }
+
+  if (burst) {
+    spawnRandomShout();
   }
 
   closeTimer = window.setTimeout(closeMouth, prefersReducedMotion ? 1100 : 1850);
@@ -83,6 +108,6 @@ window.setInterval(() => {
   const enoughSilence = Date.now() - lastManualShout > 6500;
 
   if (!document.hidden && enoughSilence && !alien.classList.contains("is-shouting")) {
-    shout({ voice: false });
+    shout({ voice: false, burst: false });
   }
 }, 8500);
