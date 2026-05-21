@@ -17,6 +17,7 @@ const alienVoicePresets = [
   { rate: 1.08, pitch: 0.55 },
   { rate: 1.22, pitch: 1.85 },
 ];
+const maxExtraVoiceEs = 20;
 
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
@@ -62,6 +63,16 @@ function pickRandomVoice() {
   return voicePool.length ? randomItem(voicePool) : null;
 }
 
+function buildAttentionSpeech() {
+  let extraEs = 0;
+
+  while (extraEs < maxExtraVoiceEs && Math.random() < 0.5) {
+    extraEs += 1;
+  }
+
+  return `attenzione${"e".repeat(extraEs)}`;
+}
+
 function speakAttention() {
   if (!("speechSynthesis" in window)) {
     return;
@@ -69,7 +80,7 @@ function speakAttention() {
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance("attenzione");
+  const utterance = new SpeechSynthesisUtterance(buildAttentionSpeech());
   const randomVoice = pickRandomVoice();
   const voicePreset = randomItem(alienVoicePresets);
 
