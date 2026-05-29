@@ -364,14 +364,22 @@ a {
   overflow-wrap: anywhere;
 }
 
-.pronunciation-record {
+.counters {
   position: relative;
   z-index: 1001;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.pronunciation-record,
+.click-total {
   display: inline-grid;
   grid-template-columns: auto auto;
   align-items: end;
   gap: 0 13px;
-  margin-top: 18px;
   padding: 15px 18px 13px;
   border: 3px solid var(--ink);
   border-radius: 8px;
@@ -381,7 +389,9 @@ a {
 }
 
 .pronunciation-record span,
-.pronunciation-record em {
+.pronunciation-record em,
+.click-total span,
+.click-total em {
   font-size: clamp(13px, 1.5vw, 17px);
   font-style: normal;
   font-weight: 950;
@@ -393,12 +403,17 @@ a {
   color: var(--red);
 }
 
-.pronunciation-record strong {
+.pronunciation-record strong,
+.click-total strong {
   grid-row: 1 / span 2;
   color: var(--deep);
-  font-size: clamp(78px, 9vw, 124px);
   font-weight: 950;
   line-height: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+
+.pronunciation-record strong {
+  font-size: clamp(78px, 9vw, 124px);
 }
 
 .pronunciation-record em {
@@ -407,6 +422,30 @@ a {
 
 .pronunciation-record.is-record {
   animation: record-pop 620ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.click-total {
+  gap: 0 10px;
+  padding: 12px 15px 11px;
+  background: var(--warning);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+.click-total span {
+  color: var(--deep);
+}
+
+.click-total strong {
+  min-width: 1.3ch;
+  font-size: clamp(44px, 5vw, 72px);
+}
+
+.click-total em {
+  color: var(--ink);
+}
+
+.click-total.is-counted {
+  animation: click-pop 360ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
 #live-shout {
@@ -578,6 +617,20 @@ a {
     background: var(--paper);
     box-shadow: 9px 9px 0 var(--ink);
     transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes click-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.09) rotate(1.5deg);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
 

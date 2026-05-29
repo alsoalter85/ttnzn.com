@@ -5,12 +5,15 @@ const liveShout = document.querySelector("#live-shout");
 const randomShouts = document.querySelector("#random-shouts");
 const pronunciationRecord = document.querySelector("#pronunciation-record");
 const pronunciationRecordValue = document.querySelector("#pronunciation-record-value");
+const clickTotal = document.querySelector("#click-total");
+const clickTotalValue = document.querySelector("#click-total-value");
 const confetti = document.querySelector("#confetti");
 const animatedMarks = Array.from(document.querySelectorAll(".attento-mark"));
 
 let closeTimer;
 let lastManualShout = 0;
 let highestExtraEs = -1;
+let totalClicks = 0;
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const markStates = animatedMarks
@@ -253,6 +256,19 @@ function updatePronunciationRecord(extraEs) {
   spawnConfettiBurst();
 }
 
+function updateClickTotal() {
+  if (!clickTotal || !clickTotalValue) {
+    return;
+  }
+
+  totalClicks += 1;
+  clickTotalValue.textContent = String(totalClicks);
+  clickTotal.classList.remove("is-counted");
+  void clickTotal.offsetWidth;
+  clickTotal.classList.add("is-counted");
+  window.setTimeout(() => clickTotal.classList.remove("is-counted"), 360);
+}
+
 function pickItalianVoice() {
   if (!("speechSynthesis" in window)) {
     return null;
@@ -354,8 +370,14 @@ if (!prefersReducedMotion) {
   scheduleAttentoBlink();
 }
 
-alien.addEventListener("click", () => shout());
-shoutButton.addEventListener("click", () => shout());
+alien.addEventListener("click", () => {
+  updateClickTotal();
+  shout();
+});
+shoutButton.addEventListener("click", () => {
+  updateClickTotal();
+  shout();
+});
 quietButton.addEventListener("click", closeMouth);
 
 document.addEventListener("keydown", (event) => {
