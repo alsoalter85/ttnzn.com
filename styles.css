@@ -110,7 +110,6 @@ a {
 
 .mouth-zone {
   position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 0.5fr) minmax(300px, 540px) minmax(320px, 0.9fr);
   align-items: center;
@@ -340,7 +339,6 @@ a {
 
 .copy {
   position: relative;
-  z-index: 1000;
   align-self: center;
   width: min(100%, 360px);
   min-width: 0;
