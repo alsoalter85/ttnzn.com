@@ -339,6 +339,8 @@ a {
 }
 
 .copy {
+  position: relative;
+  z-index: 1000;
   align-self: center;
   width: min(100%, 360px);
   min-width: 0;
@@ -362,6 +364,51 @@ a {
   letter-spacing: 0;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+}
+
+.pronunciation-record {
+  position: relative;
+  z-index: 1001;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: end;
+  gap: 0 13px;
+  margin-top: 18px;
+  padding: 15px 18px 13px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 9px 9px 0 var(--ink);
+  transform-origin: left center;
+}
+
+.pronunciation-record span,
+.pronunciation-record em {
+  font-size: clamp(13px, 1.5vw, 17px);
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.pronunciation-record span {
+  color: var(--red);
+}
+
+.pronunciation-record strong {
+  grid-row: 1 / span 2;
+  color: var(--deep);
+  font-size: clamp(78px, 9vw, 124px);
+  font-weight: 950;
+  line-height: 0.72;
+}
+
+.pronunciation-record em {
+  color: var(--ink);
+}
+
+.pronunciation-record.is-record {
+  animation: record-pop 620ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
 #live-shout {
@@ -480,6 +527,28 @@ a {
   animation: random-shout 220ms cubic-bezier(.2, .8, .2, 1) both;
 }
 
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 11px;
+  height: 16px;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: var(--confetti-color);
+  box-shadow: 2px 2px 0 rgba(6, 21, 18, 0.18);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: confetti-pop 980ms cubic-bezier(.12, .72, .24, 1) var(--confetti-delay) forwards;
+}
+
 @keyframes attento-wake {
   from {
     opacity: 0;
@@ -491,6 +560,26 @@ a {
     opacity: 1;
     filter: blur(0);
     transform: scale(1);
+  }
+}
+
+@keyframes record-pop {
+  0% {
+    background: var(--paper);
+    box-shadow: 9px 9px 0 var(--ink);
+    transform: scale(1) rotate(0deg);
+  }
+
+  36% {
+    background: var(--warning);
+    box-shadow: 14px 14px 0 var(--red);
+    transform: scale(1.13) rotate(-2deg);
+  }
+
+  100% {
+    background: var(--paper);
+    box-shadow: 9px 9px 0 var(--ink);
+    transform: scale(1) rotate(0deg);
   }
 }
 
@@ -519,6 +608,22 @@ a {
 
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes confetti-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35) rotate(0deg);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1) rotate(var(--spin));
   }
 }
 

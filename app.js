@@ -3,10 +3,14 @@ const shoutButton = document.querySelector("#shout-button");
 const quietButton = document.querySelector("#quiet-button");
 const liveShout = document.querySelector("#live-shout");
 const randomShouts = document.querySelector("#random-shouts");
+const pronunciationRecord = document.querySelector("#pronunciation-record");
+const pronunciationRecordValue = document.querySelector("#pronunciation-record-value");
+const confetti = document.querySelector("#confetti");
 const animatedMarks = Array.from(document.querySelectorAll(".attento-mark"));
 
 let closeTimer;
 let lastManualShout = 0;
+let highestExtraEs = -1;
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const markStates = animatedMarks
@@ -52,6 +56,7 @@ let gazeFrame = 0;
 let blinkTimer;
 const shoutLabels = ["attenzione", "attento", "ttn zn"];
 const labelColors = ["#ffd238", "#e64b3c", "#6ab7ff", "#f9f2e2", "#9be7c2"];
+const confettiColors = ["#ffd238", "#e64b3c", "#6ab7ff", "#9be7c2", "#f9f2e2"];
 const alienVoicePresets = [
   { rate: 0.58, pitch: 0.25 },
   { rate: 0.72, pitch: 0.35 },
@@ -203,6 +208,51 @@ function spawnRandomShout() {
   randomShouts.append(label);
 }
 
+function spawnConfettiBurst() {
+  if (!confetti || !pronunciationRecord) {
+    return;
+  }
+
+  const rect = pronunciationRecord.getBoundingClientRect();
+  const originX = rect.left + rect.width / 2;
+  const originY = rect.top + rect.height / 2;
+  const pieces = 36;
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < pieces; index += 1) {
+    const piece = document.createElement("span");
+    const angle = randomBetween(-Math.PI, 0);
+    const distance = randomBetween(70, 220);
+
+    piece.className = "confetti-piece";
+    piece.style.setProperty("--x", `${originX}px`);
+    piece.style.setProperty("--y", `${originY}px`);
+    piece.style.setProperty("--tx", `${Math.cos(angle) * distance}px`);
+    piece.style.setProperty("--ty", `${Math.sin(angle) * distance + randomBetween(30, 110)}px`);
+    piece.style.setProperty("--spin", `${randomBetween(-720, 720)}deg`);
+    piece.style.setProperty("--confetti-color", randomItem(confettiColors));
+    piece.style.setProperty("--confetti-delay", `${randomBetween(0, 90)}ms`);
+    piece.addEventListener("animationend", () => piece.remove(), { once: true });
+    fragment.append(piece);
+  }
+
+  confetti.append(fragment);
+}
+
+function updatePronunciationRecord(extraEs) {
+  if (extraEs <= highestExtraEs || !pronunciationRecord || !pronunciationRecordValue) {
+    return;
+  }
+
+  highestExtraEs = extraEs;
+  pronunciationRecordValue.textContent = String(extraEs);
+  pronunciationRecord.classList.remove("is-record");
+  void pronunciationRecord.offsetWidth;
+  pronunciationRecord.classList.add("is-record");
+  window.setTimeout(() => pronunciationRecord.classList.remove("is-record"), 900);
+  spawnConfettiBurst();
+}
+
 function pickItalianVoice() {
   if (!("speechSynthesis" in window)) {
     return null;
@@ -225,24 +275,27 @@ function pickRandomVoice() {
   return voicePool.length ? randomItem(voicePool) : null;
 }
 
-function buildAttentionSpeech() {
+function buildAttentionPronunciation() {
   let extraEs = 0;
 
   while (extraEs < maxExtraVoiceEs && Math.random() < 0.5) {
     extraEs += 1;
   }
 
-  return `attenzione${"e".repeat(extraEs)}`;
+  return {
+    extraEs,
+    text: `attenzione${"e".repeat(extraEs)}`,
+  };
 }
 
-function speakAttention() {
+function speakAttention(text) {
   if (!("speechSynthesis" in window)) {
     return;
   }
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(buildAttentionSpeech());
+  const utterance = new SpeechSynthesisUtterance(text);
   const randomVoice = pickRandomVoice();
   const voicePreset = randomItem(alienVoicePresets);
 
@@ -276,8 +329,10 @@ function shout({ voice = true, burst = true } = {}) {
   });
 
   if (voice) {
+    const pronunciation = buildAttentionPronunciation();
     lastManualShout = Date.now();
-    speakAttention();
+    updatePronunciationRecord(pronunciation.extraEs);
+    speakAttention(pronunciation.text);
   }
 
   if (burst) {
