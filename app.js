@@ -67,7 +67,7 @@ const alienVoicePresets = [
   { rate: 1.08, pitch: 0.55 },
   { rate: 1.22, pitch: 1.85 },
 ];
-const maxExtraVoiceEs = 20;
+const maxExtraVoiceEs = 100;
 
 function preventPageZoom(event) {
   event.preventDefault();
