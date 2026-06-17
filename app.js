@@ -81,6 +81,12 @@ const autoClickerFrameMs = 16;
 const autoClickerFrameBudgetMs = 6;
 const autoClickerMaxAttemptsPerFrame = 5000;
 const numberFormatter = new Intl.NumberFormat("en-US");
+const compactNumberUnits = [
+  { value: 1_000_000_000_000, suffix: "T" },
+  { value: 1_000_000_000, suffix: "B" },
+  { value: 1_000_000, suffix: "M" },
+  { value: 1_000, suffix: "K" },
+];
 
 function preventPageZoom(event) {
   event.preventDefault();
@@ -110,6 +116,17 @@ function randomItem(items) {
 
 function formatWholeNumber(value) {
   return numberFormatter.format(value);
+}
+
+function formatCompactCount(value) {
+  const absoluteValue = Math.abs(value);
+  const unit = compactNumberUnits.find(({ value: unitValue }) => absoluteValue >= unitValue);
+
+  if (!unit) {
+    return formatWholeNumber(value);
+  }
+
+  return `${(value / unit.value).toFixed(2)}${unit.suffix}`;
 }
 
 function formatBigInt(value) {
@@ -316,7 +333,9 @@ function updateClickTotal(amount = 1, { animate = true } = {}) {
   }
 
   totalClicks += amount;
-  clickTotalValue.textContent = formatWholeNumber(totalClicks);
+  clickTotalValue.textContent = formatCompactCount(totalClicks);
+  clickTotalValue.title = formatWholeNumber(totalClicks);
+  clickTotal.setAttribute("aria-label", `${formatWholeNumber(totalClicks)} clicks total`);
 
   if (!animate) {
     return;

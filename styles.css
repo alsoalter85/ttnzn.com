@@ -447,7 +447,9 @@ a {
 }
 
 .click-total {
+  grid-template-columns: auto auto;
   gap: 0 10px;
+  min-width: 176px;
   padding: 12px 15px 11px;
   background: var(--warning);
   box-shadow: 7px 7px 0 var(--ink);
@@ -458,8 +460,11 @@ a {
 }
 
 .click-total strong {
-  min-width: 1.3ch;
-  font-size: clamp(44px, 5vw, 72px);
+  grid-column: 1 / -1;
+  grid-row: auto;
+  min-width: 0;
+  width: 100%;
+  font-size: clamp(40px, 4.6vw, 68px);
 }
 
 .click-total em {
