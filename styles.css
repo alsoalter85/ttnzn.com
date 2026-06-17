@@ -447,27 +447,35 @@ a {
 }
 
 .click-total {
-  grid-template-columns: auto auto;
-  gap: 0 10px;
-  min-width: 176px;
+  grid-template-columns: minmax(0, max-content) max-content;
+  gap: 0 12px;
+  min-width: 0;
   padding: 12px 15px 11px;
   background: var(--warning);
   box-shadow: 7px 7px 0 var(--ink);
 }
 
 .click-total span {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
   color: var(--deep);
 }
 
 .click-total strong {
-  grid-column: 1 / -1;
-  grid-row: auto;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
   min-width: 0;
-  width: 100%;
-  font-size: clamp(40px, 4.6vw, 68px);
+  max-width: 6.6ch;
+  font-size: clamp(42px, 4.2vw, 62px);
+  white-space: nowrap;
 }
 
 .click-total em {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
   color: var(--ink);
 }
 
