@@ -82,12 +82,13 @@
 
         <div class="copy">
           <p>ttnzn.com</p>
-          <h1>attenzione</h1>
+          <h1 id="record-word">ATTENZIONE</h1>
           <div class="counters">
             <div class="pronunciation-record" id="pronunciation-record" aria-live="polite" aria-atomic="true">
               <span>record</span>
               <strong id="pronunciation-record-value">0</strong>
               <em>extra e</em>
+              <small class="record-odds">exact odds <b id="record-odds-value">one in 2</b></small>
             </div>
             <div class="click-total" id="click-total" aria-live="polite" aria-atomic="true">
               <span>clicks</span>
@@ -102,6 +103,13 @@
           <button class="action action-primary" id="shout-button" type="button">
             <span aria-hidden="true">!</span>
             attenzione
+          </button>
+          <button class="action action-auto" id="auto-clicker-button" type="button" aria-pressed="false">
+            <span aria-hidden="true">>></span>
+            <span id="auto-clicker-label">auto</span>
+          </button>
+          <button class="action action-guide" id="guide-button" type="button" aria-haspopup="dialog" aria-controls="probability-guide" aria-label="Open probability guide">
+            <span aria-hidden="true">?</span>
           </button>
           <button class="action action-quiet" id="quiet-button" type="button" aria-label="Chiudi la bocca">
             <span aria-hidden="true">x</span>
@@ -120,6 +128,17 @@
     </main>
     <div class="random-shouts" id="random-shouts" aria-hidden="true"></div>
     <div class="confetti" id="confetti" aria-hidden="true"></div>
+    <dialog class="guide-dialog" id="probability-guide" aria-labelledby="probability-guide-title">
+      <div class="guide-panel">
+        <button class="guide-close" id="guide-close-button" type="button" aria-label="Close probability guide">x</button>
+        <p class="guide-kicker">probability guide</p>
+        <h2 id="probability-guide-title">How the extra Es work</h2>
+        <p>Each click starts with ATTENZIONE. Then the app flips a yes/no coin. Yes adds one extra E and flips again. No stops.</p>
+        <p>So 3 extra Es means yes, yes, yes, then no. Four coin answers in a row. That is one in 16.</p>
+        <p>The record is just the longest yes streak you have seen. The odds line says the chance that one fresh click lands on exactly that record.</p>
+        <p>The app caps the count at 100 extra Es. At 100, the odds mean 100 or more.</p>
+      </div>
+    </dialog>
 
     <script src="app.js"></script>
   </body>

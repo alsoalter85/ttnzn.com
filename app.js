@@ -1,10 +1,17 @@
 const alien = document.querySelector(".alien");
 const shoutButton = document.querySelector("#shout-button");
+const autoClickerButton = document.querySelector("#auto-clicker-button");
+const autoClickerLabel = document.querySelector("#auto-clicker-label");
 const quietButton = document.querySelector("#quiet-button");
+const guideButton = document.querySelector("#guide-button");
+const probabilityGuide = document.querySelector("#probability-guide");
+const guideCloseButton = document.querySelector("#guide-close-button");
 const liveShout = document.querySelector("#live-shout");
 const randomShouts = document.querySelector("#random-shouts");
 const pronunciationRecord = document.querySelector("#pronunciation-record");
 const pronunciationRecordValue = document.querySelector("#pronunciation-record-value");
+const recordOddsValue = document.querySelector("#record-odds-value");
+const recordWord = document.querySelector("#record-word");
 const clickTotal = document.querySelector("#click-total");
 const clickTotalValue = document.querySelector("#click-total-value");
 const confetti = document.querySelector("#confetti");
@@ -14,6 +21,8 @@ let closeTimer;
 let lastManualShout = 0;
 let highestExtraEs = -1;
 let totalClicks = 0;
+let autoClickerRunning = false;
+let autoClickerVisualTick = 0;
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const markStates = animatedMarks
@@ -68,6 +77,15 @@ const alienVoicePresets = [
   { rate: 1.22, pitch: 1.85 },
 ];
 const maxExtraVoiceEs = 100;
+const autoClickerFrameMs = 16;
+const autoClickerFrameBudgetMs = 6;
+const autoClickerMaxAttemptsPerFrame = 5000;
+const numberFormatter = new Intl.NumberFormat("en-US");
+const compactNumberUnits = [
+  { value: 1_000_000_000_000, suffix: "T" },
+  { value: 1_000_000_000, suffix: "B" },
+  { value: 1_000_000, suffix: "M" },
+];
 
 function preventPageZoom(event) {
   event.preventDefault();
@@ -93,6 +111,47 @@ function randomBetween(min, max) {
 
 function randomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+function formatWholeNumber(value) {
+  return numberFormatter.format(value);
+}
+
+function formatCompactCount(value) {
+  const absoluteValue = Math.abs(value);
+  const unit = compactNumberUnits.find(({ value: unitValue }) => absoluteValue >= unitValue);
+
+  if (!unit) {
+    return formatWholeNumber(value);
+  }
+
+  return `${(value / unit.value).toFixed(2)}${unit.suffix}`;
+}
+
+function formatBigInt(value) {
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function buildAttentionText(extraEs) {
+  return `ATTENZIONE${"E".repeat(Math.max(0, extraEs))}`;
+}
+
+function exactOddsDenominator(extraEs) {
+  const exponent = extraEs >= maxExtraVoiceEs ? maxExtraVoiceEs : extraEs + 1;
+
+  return 1n << BigInt(exponent);
+}
+
+function updateRecordDetails(extraEs) {
+  const visibleExtraEs = Math.max(0, extraEs);
+
+  if (recordWord) {
+    recordWord.textContent = buildAttentionText(visibleExtraEs);
+  }
+
+  if (recordOddsValue) {
+    recordOddsValue.textContent = `one in ${formatBigInt(exactOddsDenominator(visibleExtraEs))}`;
+  }
 }
 
 function requestAttentoGazeTick() {
@@ -198,6 +257,10 @@ function scheduleAttentoBlink(delay = 1600) {
 requestAttentoGazeTick();
 
 function spawnRandomShout() {
+  if (!randomShouts || !randomShouts.isConnected) {
+    return;
+  }
+
   const label = document.createElement("span");
 
   label.className = "random-shout";
@@ -209,6 +272,12 @@ function spawnRandomShout() {
   label.style.setProperty("--label-color", labelColors[Math.floor(Math.random() * labelColors.length)]);
 
   randomShouts.append(label);
+}
+
+function clearRandomShouts() {
+  if (randomShouts) {
+    randomShouts.replaceChildren();
+  }
 }
 
 function spawnConfettiBurst() {
@@ -249,6 +318,7 @@ function updatePronunciationRecord(extraEs) {
 
   highestExtraEs = extraEs;
   pronunciationRecordValue.textContent = String(extraEs);
+  updateRecordDetails(extraEs);
   pronunciationRecord.classList.remove("is-record");
   void pronunciationRecord.offsetWidth;
   pronunciationRecord.classList.add("is-record");
@@ -256,13 +326,20 @@ function updatePronunciationRecord(extraEs) {
   spawnConfettiBurst();
 }
 
-function updateClickTotal() {
+function updateClickTotal(amount = 1, { animate = true } = {}) {
   if (!clickTotal || !clickTotalValue) {
     return;
   }
 
-  totalClicks += 1;
-  clickTotalValue.textContent = String(totalClicks);
+  totalClicks += amount;
+  clickTotalValue.textContent = formatCompactCount(totalClicks);
+  clickTotalValue.title = formatWholeNumber(totalClicks);
+  clickTotal.setAttribute("aria-label", `${formatWholeNumber(totalClicks)} clicks total`);
+
+  if (!animate) {
+    return;
+  }
+
   clickTotal.classList.remove("is-counted");
   void clickTotal.offsetWidth;
   clickTotal.classList.add("is-counted");
@@ -327,6 +404,107 @@ function speakAttention(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+function updateAutoClickerButton() {
+  if (!autoClickerButton) {
+    return;
+  }
+
+  autoClickerButton.setAttribute("aria-pressed", String(autoClickerRunning));
+
+  if (autoClickerLabel) {
+    autoClickerLabel.textContent = autoClickerRunning ? "stop" : "auto";
+  }
+}
+
+function runAutoClickerBatch() {
+  const start = performance.now();
+  let attempts = 0;
+  let bestExtraEs = highestExtraEs;
+
+  while (
+    attempts < autoClickerMaxAttemptsPerFrame &&
+    performance.now() - start < autoClickerFrameBudgetMs
+  ) {
+    attempts += 1;
+    bestExtraEs = Math.max(bestExtraEs, buildAttentionPronunciation().extraEs);
+  }
+
+  if (!attempts) {
+    return;
+  }
+
+  lastManualShout = Date.now();
+  updateClickTotal(attempts, { animate: false });
+
+  if (bestExtraEs > highestExtraEs) {
+    updatePronunciationRecord(bestExtraEs);
+  }
+
+  autoClickerVisualTick += 1;
+
+  if (!prefersReducedMotion && autoClickerVisualTick % 8 === 0) {
+    shout({ voice: false, burst: false });
+  }
+}
+
+function stopAutoClicker() {
+  window.clearInterval(window.ttnznAutoClicker);
+  window.ttnznAutoClicker = 0;
+  autoClickerRunning = false;
+  updateAutoClickerButton();
+}
+
+function startAutoClicker() {
+  stopAutoClicker();
+  clearRandomShouts();
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  autoClickerRunning = true;
+  autoClickerVisualTick = 0;
+  window.ttnznAutoClicker = window.setInterval(runAutoClickerBatch, autoClickerFrameMs);
+  updateAutoClickerButton();
+}
+
+function toggleAutoClicker() {
+  if (autoClickerRunning) {
+    stopAutoClicker();
+    return;
+  }
+
+  startAutoClicker();
+}
+
+function openProbabilityGuide() {
+  if (!probabilityGuide) {
+    return;
+  }
+
+  if (typeof probabilityGuide.showModal === "function") {
+    probabilityGuide.showModal();
+    return;
+  }
+
+  probabilityGuide.setAttribute("open", "");
+  probabilityGuide.classList.add("is-open");
+}
+
+function closeProbabilityGuide() {
+  if (!probabilityGuide) {
+    return;
+  }
+
+  if (typeof probabilityGuide.close === "function") {
+    probabilityGuide.close();
+    return;
+  }
+
+  probabilityGuide.removeAttribute("open");
+  probabilityGuide.classList.remove("is-open");
+}
+
 function closeMouth() {
   window.clearTimeout(closeTimer);
   alien.classList.remove("is-shouting");
@@ -379,6 +557,14 @@ shoutButton.addEventListener("click", () => {
   shout();
 });
 quietButton.addEventListener("click", closeMouth);
+autoClickerButton.addEventListener("click", toggleAutoClicker);
+guideButton.addEventListener("click", openProbabilityGuide);
+guideCloseButton.addEventListener("click", closeProbabilityGuide);
+probabilityGuide.addEventListener("click", (event) => {
+  if (event.target === probabilityGuide) {
+    closeProbabilityGuide();
+  }
+});
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -393,7 +579,9 @@ if ("speechSynthesis" in window && "onvoiceschanged" in window.speechSynthesis) 
 window.setInterval(() => {
   const enoughSilence = Date.now() - lastManualShout > 6500;
 
-  if (!document.hidden && enoughSilence && !alien.classList.contains("is-shouting")) {
+  if (!autoClickerRunning && !document.hidden && enoughSilence && !alien.classList.contains("is-shouting")) {
     shout({ voice: false, burst: false });
   }
 }, 8500);
+
+updateRecordDetails(0);
